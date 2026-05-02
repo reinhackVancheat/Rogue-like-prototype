@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>roguelike</title>
+    <style>
+        canvas {
+            background-color: blueviolet;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas1"></canvas>
+    <script type="module">
+        import { Renderer } from './js/Renderer.js';
+        import { Player } from './js/Player.js';
+        import { GameManager } from './js/GameManager.js';
+        /**@type {HTMLCanvasElement}*/
+        const canvas = document.getElementById("canvas1");
+        canvas.width = innerWidth;
+        canvas.height = innerHeight
+        
+        const keys = [];
+        const gameTimeManager = {
+            lastTime: performance.now(),
+            deltaTimeSeconds: 0,
+        }
+        
+        const renderer = new Renderer(canvas);
+        const player = new Player(300, 200, 32, 32, 100, gameTimeManager, keys);
+        const gameManager = new GameManager(renderer, gameTimeManager);
+        function gameLoop(){
+            gameManager.update(player);
+            gameManager.draw(player);
+            requestAnimationFrame(gameLoop);    
+        }
+        requestAnimationFrame(gameLoop);
+        document.addEventListener("keydown", (e) => {
+            keys[e.keyCode] = true;
+        });
+        document.addEventListener("keyup", (e) => {
+            keys[e.keyCode] = false;
+            
+        });
+        window.addEventListener("resize", () => {
+            canvas.width = innerWidth;
+            canvas.height = innerHeight;
+        })
+
+    </script>
+</body>
+</html>
