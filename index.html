@@ -5,8 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>roguelike</title>
     <style>
+        body{
+            display: flex;
+        }
         canvas {
-            background-color: blueviolet;
+            margin: auto;
+            border: 2px solid black;
         }
     </style>
 </head>
@@ -16,10 +20,9 @@
         import { Renderer } from './js/Renderer.js';
         import { Player } from './js/Player.js';
         import { GameManager } from './js/GameManager.js';
-        /**@type {HTMLCanvasElement}*/
         const canvas = document.getElementById("canvas1");
-        canvas.width = innerWidth;
-        canvas.height = innerHeight
+        canvas.width = innerWidth * 0.98;
+        canvas.height = innerHeight * 0.96;
         
         const keys = [];
         const gameTimeManager = {
@@ -28,9 +31,14 @@
         }
         
         const renderer = new Renderer(canvas);
-        const player = new Player(300, 200, 32, 32, 100, gameTimeManager, keys);
+        const player = new Player(300, 200, canvas.width * 0.2, gameTimeManager, keys);
         const gameManager = new GameManager(renderer, gameTimeManager);
+
+        await renderer.loadAssets();
+        
         function gameLoop(){
+            renderer.clear();
+            renderer.drawBackground();
             gameManager.update(player);
             gameManager.draw(player);
             requestAnimationFrame(gameLoop);    
@@ -44,8 +52,8 @@
             
         });
         window.addEventListener("resize", () => {
-            canvas.width = innerWidth;
-            canvas.height = innerHeight;
+            canvas.width = innerWidth * 0.98;
+            canvas.height = innerHeight * 0.96;
         })
 
     </script>

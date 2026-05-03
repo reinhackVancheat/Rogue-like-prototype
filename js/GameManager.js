@@ -4,7 +4,6 @@ export class GameManager {
 		this.gameTimeManager = gameTimeManager;
 	}
 	draw(...objects) {
-		this.renderer.clear();
 		for (const obj of objects) {
 			obj.draw(this.renderer);
 		}
