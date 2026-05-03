@@ -75,7 +75,9 @@ export class Enemy {
 
 	update(wW, wH, player) {
 		if (this.isDead()) return;
-		if (this.hurt) this.hurtCount += this.gameTimeManager.deltaTimeSeconds;
+		if (this.hurt) {
+			this.hurtCount += this.gameTimeManager.deltaTimeSeconds;
+		}
 		if (this.hurtCount >= this.hurtTime) {
 			this.hurt = false;
 			this.hurtCount = 0;
@@ -107,7 +109,10 @@ export class Enemy {
 	applyPhysics(_wW, wH) {
 		this.vy += 1200 * this.gameTimeManager.deltaTimeSeconds;
 		this.x +=
-			this.xVelocity * this.gameTimeManager.deltaTimeSeconds * this.direction;
+			this.xVelocity *
+			this.gameTimeManager.deltaTimeSeconds *
+			this.direction *
+			!this.hurt;
 		this.y += this.vy * this.gameTimeManager.deltaTimeSeconds;
 
 		const frameHeight =
