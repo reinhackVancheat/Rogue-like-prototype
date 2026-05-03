@@ -29,6 +29,10 @@ export class Enemy {
 		this.attacking = false;
 		this.damage = 10;
 		this.attackRange = 80;
+
+		this.hurt = false;
+		this.hurtTime = 0.6;
+		this.hurtCount = 0;
 	}
 	isPlayerInRange(player) {
 		return (
@@ -71,9 +75,15 @@ export class Enemy {
 
 	update(wW, wH, player) {
 		if (this.isDead()) return;
+		if (this.hurt) this.hurtCount += this.gameTimeManager.deltaTimeSeconds;
+		if (this.hurtCount >= this.hurtTime) {
+			this.hurt = false;
+			this.hurtCount = 0;
+		}
 		this.updateAnimationState(player);
 		this.updateAnimationSprite();
 		this.applyPhysics(wW, wH);
+		if (this.hurt) return;
 		if (player) this.tryAttack(player);
 	}
 	updateState(newState, newFPS) {
@@ -124,10 +134,12 @@ export class Enemy {
 	}
 
 	takeDamage(player) {
+		if (this.hurt) return;
 		this.hp.actual = Math.max(0, this.hp.actual - player.damage);
 		if (this.isDead()) {
 			player.enemiesKilled++;
 		}
+		this.hurt = true;
 	}
 }
 
@@ -188,6 +200,9 @@ class LizardGruntImageManager extends EnemyImageManager {
 			Array.from({ length: 8 }, (_, i) =>
 				load(`${base}/Attack/attack-${i + 1}.png`, 100, 100),
 			),
+			Array.from({ length: 4 }, (_, i) =>
+				load(`${base}/Hurt/hurt-${i + 1}.png`, 100, 100),
+			),
 		]);
 	}
 }
@@ -198,7 +213,9 @@ class LizardGrunt extends Enemy {
 	}
 
 	updateAnimationState(player) {
-		if (this.attacking) {
+		if (this.hurt) {
+			this.updateState(3, 12);
+		} else if (this.attacking) {
 			this.updateState(2, 12);
 		} else if (this.xVelocity !== 0) {
 			this.updateState(1, 10);

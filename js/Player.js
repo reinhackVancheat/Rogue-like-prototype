@@ -25,6 +25,11 @@ class PlayerImageManager {
 			img.src = `imgs/Satyr_sprite_pack/attack-${i + 1}.png`;
 			return { img, width: 115, height: 100 };
 		});
+		this.hurtFrames = Array.from({ length: 4 }, (_, i) => {
+			const img = new Image();
+			img.src = `imgs/Satyr_sprite_pack/hurt_${i + 1}.png`;
+			return { img, width: 115, height: 100 };
+		});
 	}
 }
 export class Player {
@@ -58,6 +63,7 @@ export class Player {
 			this.imageManager.jumpingFrames,
 			this.imageManager.fallingFrames,
 			this.imageManager.attackFrames,
+			this.imageManager.hurtFrames,
 		];
 		this.animTimer = 0;
 		this.animFrame = 0;
@@ -70,6 +76,10 @@ export class Player {
 		this.damage = 40;
 
 		this.enemiesKilled = 0;
+
+		this.hurt = false;
+		this.hurtTime = 0.6;
+		this.hurtTimeCount = 0;
 	}
 	updateAnimation() {
 		this.animTimer += this.gameTimeManager.deltaTimeSeconds;
@@ -105,7 +115,9 @@ export class Player {
 		}
 	}
 	takeDamage(amount) {
+		if (this.hurt) return;
 		this.hp.actual = Math.max(0, this.hp.actual - amount);
+		this.hurt = true;
 	}
 	isDead() {
 		return this.hp.actual <= 0;
@@ -143,7 +155,9 @@ export class Player {
 	}
 
 	manageState() {
-		if (this.attacking) {
+		if (this.hurt) {
+			this.updateState(5, 13);
+		} else if (this.attacking) {
 			this.updateState(4, 20);
 		} else if (this.vy < 0) {
 			this.updateState(2, 5);
@@ -158,8 +172,16 @@ export class Player {
 
 	update(_wW, wH) {
 		if (this.isDead()) return;
-		this.move();
-		this.attack(this.enemies.list);
+		if (this.hurt) {
+			this.hurtTimeCount += this.gameTimeManager.deltaTimeSeconds;
+			if (this.hurtTimeCount >= this.hurtTime) {
+				this.hurt = false;
+				this.hurtTimeCount = 0;
+			}
+		} else {
+			this.move();
+			this.attack(this.enemies.list);
+		}
 		this.manageState();
 		this.updateAnimation();
 
