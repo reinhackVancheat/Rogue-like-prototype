@@ -15,6 +15,8 @@ export class Renderer {
 			img.src = src;
 			return img;
 		});
+		this.portrait = new Image();
+		this.portrait.src = "imgs/Satyr_sprite_pack/SPRITE_PORTRAIT.png";
 	}
 	get width() {
 		return this.canvas.width;
@@ -48,9 +50,39 @@ export class Renderer {
 		this.context.drawImage(img.img, -img.width / 2, y, img.width, img.height);
 		this.context.restore();
 	}
-	drawBackground() {
-		for (const img of this.backgroundLayers) {
-			this.context.drawImage(img, 0, 0, this.canvas.width, this.canvas.height);
+	applyCamera(cameraX) {
+		this.context.save();
+		this.context.translate(-cameraX, 0);
+	}
+
+	resetCamera() {
+		this.context.restore();
+	}
+
+	drawBackground(cameraX = 0) {
+		const w = this.canvas.width;
+		const h = this.canvas.height;
+		const speeds = [0.05, 0.15, 0.35, 0.6];
+
+		for (let i = 0; i < this.backgroundLayers.length; i++) {
+			const offset = (((-cameraX * speeds[i]) % w) + w) % w;
+			this.context.drawImage(this.backgroundLayers[i], offset, 0, w, h);
+			this.context.drawImage(this.backgroundLayers[i], offset - w, 0, w, h);
 		}
+	}
+	drawHud(player) {
+		this.context.drawImage(this.portrait, 20, 20, 155, 140);
+		this.context.fillStyle = "black";
+		this.context.font = "70px Roboto";
+		this.context.fillText(`Kills: ${player.enemiesKilled}`, 180, 90, 140);
+		this.context.fillStyle = "red";
+		this.context.fillRect(
+			20,
+			170,
+			155 * (player.hp.actual / player.hp.max),
+			16,
+		);
+		this.context.strokeStyle = "black";
+		this.context.strokeRect(20, 170, 155, 16);
 	}
 }

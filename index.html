@@ -20,6 +20,8 @@
         import { Renderer } from './js/Renderer.js';
         import { Player } from './js/Player.js';
         import { GameManager } from './js/GameManager.js';
+        import { EnemyManager } from './js/Enemy.js';
+        import { Camera       } from './js/Camera.js'
         const canvas = document.getElementById("canvas1");
         canvas.width = innerWidth * 0.98;
         canvas.height = innerHeight * 0.96;
@@ -31,16 +33,25 @@
         }
         
         const renderer = new Renderer(canvas);
-        const player = new Player(300, 200, canvas.width * 0.2, gameTimeManager, keys);
-        const gameManager = new GameManager(renderer, gameTimeManager);
-
-        await renderer.loadAssets();
         
+        const gameManager = new GameManager(renderer, gameTimeManager);
+        const enemyManager = new EnemyManager(gameTimeManager);
+        const camera = new Camera();
+        const player = new Player(300, 200, canvas.width * 0.2, gameTimeManager, keys, enemyManager, 500);
+        await renderer.loadAssets();
+
+        window._debug = { player, enemyManager, gameManager, camera };
         function gameLoop(){
             renderer.clear();
-            renderer.drawBackground();
-            gameManager.update(player);
-            gameManager.draw(player);
+            renderer.drawBackground(camera.x);
+            
+            gameManager.update(player, enemyManager);
+            renderer.applyCamera(camera.x);
+            gameManager.draw(enemyManager, player);
+            renderer.resetCamera();
+            renderer.drawHud(player);
+            camera.follow(player, canvas.width);
+            
             requestAnimationFrame(gameLoop);    
         }
         requestAnimationFrame(gameLoop);

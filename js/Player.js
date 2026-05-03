@@ -20,21 +20,30 @@ class PlayerImageManager {
 			img.src = `imgs/Satyr_sprite_pack/falling_${i + 1}.png`;
 			return { img, width: 115, height: 100 };
 		});
+		this.attackFrames = Array.from({ length: 7 }, (_, i) => {
+			const img = new Image();
+			img.src = `imgs/Satyr_sprite_pack/attack-${i + 1}.png`;
+			return { img, width: 115, height: 100 };
+		});
 	}
 }
 export class Player {
-	constructor(x, y, speed, gameTimeManager, keys) {
+	constructor(x, y, speed, gameTimeManager, keys, enemies, hp) {
 		this.x = x;
 		this.y = y;
 		this.speed = speed;
 		this.keys = keys;
-
+		this.enemies = enemies;
 		this.controls = {
 			right: "D".charCodeAt(0),
 			left: "A".charCodeAt(0),
 			up: " ".charCodeAt(0),
+			attack: "E".charCodeAt(0),
 		};
-
+		this.hp = {
+			max: hp,
+			actual: hp,
+		};
 		this.vx = 0;
 		this.direction = 1;
 		this.onGround = false;
@@ -48,10 +57,19 @@ export class Player {
 			this.imageManager.movingFrames,
 			this.imageManager.jumpingFrames,
 			this.imageManager.fallingFrames,
+			this.imageManager.attackFrames,
 		];
 		this.animTimer = 0;
 		this.animFrame = 0;
 		this.animFPS = 5;
+
+		this.attacking = false;
+		this.attackingCooldown = 0.5;
+		this.attackingCooldownCount = 0;
+		this.attackingDuration = 0.5;
+		this.damage = 40;
+
+		this.enemiesKilled = 0;
 	}
 	updateAnimation() {
 		this.animTimer += this.gameTimeManager.deltaTimeSeconds;
@@ -86,10 +104,48 @@ export class Player {
 			this.onGround = false;
 		}
 	}
+	takeDamage(amount) {
+		this.hp.actual = Math.max(0, this.hp.actual - amount);
+	}
+	isDead() {
+		return this.hp.actual <= 0;
+	}
+	attack(enemies = []) {
+		this.attackingCooldownCount += this.gameTimeManager.deltaTimeSeconds;
 
-	update(wW, wH) {
-		this.move();
-		if (this.vy < 0) {
+		if (
+			this.keys[this.controls.attack] &&
+			!this.attacking &&
+			this.attackingCooldownCount >= this.attackingCooldown
+		) {
+			this.attacking = true;
+			this.attackingCooldownCount = 0;
+			this.attackingDuration = 0.4;
+			this.hitEnemies = new Set();
+		}
+
+		if (this.attacking) {
+			this.attackingDuration -= this.gameTimeManager.deltaTimeSeconds;
+
+			const hitbox = this.getAttackHitbox();
+			for (const enemy of enemies) {
+				if (this.hitEnemies.has(enemy)) continue;
+				if (this.rectsOverlap(hitbox, enemy)) {
+					enemy.takeDamage(this);
+					this.hitEnemies.add(enemy);
+				}
+			}
+
+			if (this.attackingDuration <= 0) {
+				this.attacking = false;
+			}
+		}
+	}
+
+	manageState() {
+		if (this.attacking) {
+			this.updateState(4, 20);
+		} else if (this.vy < 0) {
 			this.updateState(2, 5);
 		} else if (this.vy > 0 && !this.onGround) {
 			this.updateState(3, 5);
@@ -98,14 +154,19 @@ export class Player {
 		} else {
 			this.updateState(0, 5);
 		}
+	}
+
+	update(_wW, wH) {
+		if (this.isDead()) return;
+		this.move();
+		this.attack(this.enemies.list);
+		this.manageState();
 		this.updateAnimation();
 
 		this.vy += 1200 * this.gameTimeManager.deltaTimeSeconds;
 
 		this.x += this.vx * this.gameTimeManager.deltaTimeSeconds;
 		this.y += this.vy * this.gameTimeManager.deltaTimeSeconds;
-
-		this.x = Math.max(0, Math.min(wW, this.x));
 
 		if (this.y + this.stateArray[this.state][this.animFrame].height / 2 >= wH) {
 			this.y = wH - this.stateArray[this.state][this.animFrame].height / 2;
@@ -123,5 +184,30 @@ export class Player {
 			this.y - img.height / 2,
 			this.direction,
 		);
+	}
+	rectsOverlap(a, enemy) {
+		const b = {
+			x: enemy.x - 30,
+			y: enemy.y - 50,
+			width: 60,
+			height: 100,
+		};
+		return (
+			a.x < b.x + b.width &&
+			a.x + a.width > b.x &&
+			a.y < b.y + b.height &&
+			a.y + a.height > b.y
+		);
+	}
+	getAttackHitbox() {
+		const w = 60;
+		const h = 50;
+		const offsetX = this.direction === 1 ? this.x : this.x - w;
+		return {
+			x: offsetX,
+			y: this.y - h / 2,
+			width: w,
+			height: h,
+		};
 	}
 }

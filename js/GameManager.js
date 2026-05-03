@@ -1,3 +1,5 @@
+import { Player } from "./Player.js";
+import { EnemyManager } from "./Enemy.js";
 export class GameManager {
 	constructor(renderer, gameTimeManager) {
 		this.renderer = renderer;
@@ -10,9 +12,10 @@ export class GameManager {
 	}
 	update(...objects) {
 		this.updateDeltaTime();
-		for (const obj of objects) {
-			obj.update(this.renderer.width, this.renderer.height);
-		}
+		const player = objects.find((o) => o instanceof Player);
+		const enemyManager = objects.find((o) => o instanceof EnemyManager);
+		player?.update(this.renderer.width, this.renderer.height);
+		enemyManager?.update(this.renderer.width, this.renderer.height, player);
 	}
 	updateDeltaTime() {
 		const currentTime = performance.now();
