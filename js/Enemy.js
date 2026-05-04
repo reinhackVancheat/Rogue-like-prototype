@@ -107,7 +107,7 @@ export class Enemy {
 	}
 
 	applyPhysics(_wW, wH) {
-		this.vy += 1200 * this.gameTimeManager.deltaTimeSeconds;
+		this.vy += 1400 * this.gameTimeManager.deltaTimeSeconds;
 		this.x +=
 			this.xVelocity *
 			this.gameTimeManager.deltaTimeSeconds *
@@ -245,26 +245,29 @@ class LizardCommanderImageManager extends EnemyImageManager {
 
 		super([
 			Array.from({ length: 6 }, (_, i) =>
-				load(`${base}/Idle/frame-${i + 1}.png`, 200, 200),
+				load(`${base}/Idle/frame-${i + 1}.png`, 400, 400),
 			),
 			Array.from({ length: 8 }, (_, i) =>
-				load(`${base}/Run/frame-${i + 1}.png`, 200, 200),
+				load(`${base}/Run/frame-${i + 1}.png`, 400, 400),
 			),
 			Array.from({ length: 11 }, (_, i) =>
-				load(`${base}/Attack/frame-${i + 1}.png`, 200, 200),
+				load(`${base}/Attack/frame-${i + 1}.png`, 400, 400),
 			),
 			Array.from({ length: 4 }, (_, i) =>
-				load(`${base}/Hurt/frame-${i + 1}.png`, 200, 200),
+				load(`${base}/Hurt/frame-${i + 1}.png`, 400, 400),
 			),
 		]);
 	}
 }
 export class LizardCommander extends Enemy {
 	constructor(x, y, gameTimeManager) {
-		super(x, y, 60, 120, gameTimeManager);
+		super(x, y, Math.random() * 150 + 50, 500, gameTimeManager);
 		this.images = new LizardCommanderImageManager();
 
-		this.groundOffsetY = 60;
+		this.groundOffsetY = 120;
+		this.damage = 100;
+		this.attackCooldown = 3;
+		this.attackRange = 200;
 	}
 
 	updateAnimationState(player) {
