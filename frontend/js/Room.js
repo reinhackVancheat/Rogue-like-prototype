@@ -61,7 +61,7 @@ export class RoomManager {
 		if (this.rooms[index]) return;
 		let type;
 		if (index === 0) type = "combat";
-		else if (index % 6 === 0) type = "boss";
+		else if (index % 5 === 0) type = "boss";
 		else if (index % 3 === 0) type = "rest";
 		else type = "combat";
 

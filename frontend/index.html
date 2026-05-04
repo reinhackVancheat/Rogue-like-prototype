@@ -53,7 +53,7 @@
             renderer.resetCamera();
             renderer.drawHud(player, roomManager);
 
-            const movement = camera.follow(player, canvas.width, roomManager.currentRoom.cleared);
+            const movement = camera.follow(player, canvas.width, roomManager);
             if (movement === 1)  roomManager.advance();
             if (movement === -1) roomManager.retreat();
 

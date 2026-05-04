@@ -86,8 +86,16 @@ export class Renderer {
 		this.context.drawImage(this.portrait, 20, 20, 155, 140);
 		this.context.fillStyle = "black";
 		this.context.font = "70px Roboto";
+		this.context.textAlign = "left";
 		this.context.fillText(`Kills: ${player.enemiesKilled}`, 180, 90, 140);
 		this.context.fillText(`Room: ${roomManager.currentIndex}`, 180, 150, 140);
+
+		this.context.textAlign = "center";
+		this.context.fillText(
+			`Type: ${roomManager.currentRoom.type}`,
+			this.canvas.width / 2,
+			90,
+		);
 		this.context.fillStyle = "red";
 		this.context.fillRect(
 			20,

@@ -228,6 +228,7 @@ export class Player {
 		this.vy += 1200 * this.gameTimeManager.deltaTimeSeconds;
 
 		this.x += this.vx * this.gameTimeManager.deltaTimeSeconds;
+
 		this.y += this.vy * this.gameTimeManager.deltaTimeSeconds;
 
 		if (this.y + this.stateArray[this.state][this.animFrame].height / 2 >= wH) {
