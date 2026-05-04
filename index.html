@@ -42,6 +42,8 @@
 
         window._debug = { player, roomManager, gameManager, camera };
         function gameLoop() {
+            renderer.update(gameTimeManager.deltaTimeSeconds);
+            
             renderer.clear();
             renderer.drawBackground(camera.x);
 

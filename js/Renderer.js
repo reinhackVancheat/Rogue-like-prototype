@@ -17,6 +17,9 @@ export class Renderer {
 		});
 		this.portrait = new Image();
 		this.portrait.src = "imgs/Satyr_sprite_pack/SPRITE_PORTRAIT.png";
+
+		this.shakeIntensity = 0;
+		this.shakeDuration = 0;
 	}
 	get width() {
 		return this.canvas.width;
@@ -50,9 +53,18 @@ export class Renderer {
 		this.context.drawImage(img.img, -img.width / 2, y, img.width, img.height);
 		this.context.restore();
 	}
+
 	applyCamera(cameraX) {
+		const dx =
+			this.shakeDuration > 0
+				? (Math.random() - 0.5) * 2 * this.shakeIntensity
+				: 0;
+		const dy =
+			this.shakeDuration > 0
+				? (Math.random() - 0.5) * 2 * this.shakeIntensity
+				: 0;
 		this.context.save();
-		this.context.translate(-cameraX, 0);
+		this.context.translate(-cameraX + dx, dy);
 	}
 
 	resetCamera() {
@@ -85,5 +97,17 @@ export class Renderer {
 		);
 		this.context.strokeStyle = "black";
 		this.context.strokeRect(20, 170, 155, 16);
+	}
+
+	shake(intensity = 10, duration = 0.3) {
+		this.shakeIntensity = intensity;
+		this.shakeDuration = duration;
+	}
+	update(deltaTime) {
+		if (this.shakeDuration > 0) {
+			this.shakeDuration -= deltaTime;
+		} else {
+			this.shakeIntensity = 0;
+		}
 	}
 }

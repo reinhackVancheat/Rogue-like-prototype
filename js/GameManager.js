@@ -12,9 +12,15 @@ export class GameManager {
 	update(...objects) {
 		this.updateDeltaTime();
 		const player = objects.find((o) => o instanceof Player);
+		const lifeBefore = player?.hp.actual;
 		const roomManager = objects.find((o) => o instanceof RoomManager);
 		player?.update(this.renderer.width, this.renderer.height);
 		roomManager?.update(this.renderer.width, this.renderer.height, player);
+
+		if (lifeBefore > player?.hp.actual) {
+			console.log("shaking");
+			this.renderer.shake(12, 0.3);
+		}
 	}
 	updateDeltaTime() {
 		const currentTime = performance.now();
