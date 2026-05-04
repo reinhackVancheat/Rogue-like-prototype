@@ -1,21 +1,20 @@
 import { Player } from "./Player.js";
-import { EnemyManager } from "./Enemy.js";
+import { RoomManager } from "./Room.js";
+
 export class GameManager {
 	constructor(renderer, gameTimeManager) {
 		this.renderer = renderer;
 		this.gameTimeManager = gameTimeManager;
 	}
 	draw(...objects) {
-		for (const obj of objects) {
-			obj.draw(this.renderer);
-		}
+		for (const obj of objects) obj.draw(this.renderer);
 	}
 	update(...objects) {
 		this.updateDeltaTime();
 		const player = objects.find((o) => o instanceof Player);
-		const enemyManager = objects.find((o) => o instanceof EnemyManager);
+		const roomManager = objects.find((o) => o instanceof RoomManager);
 		player?.update(this.renderer.width, this.renderer.height);
-		enemyManager?.update(this.renderer.width, this.renderer.height, player);
+		roomManager?.update(this.renderer.width, this.renderer.height, player);
 	}
 	updateDeltaTime() {
 		const currentTime = performance.now();

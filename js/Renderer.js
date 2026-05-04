@@ -70,11 +70,12 @@ export class Renderer {
 			this.context.drawImage(this.backgroundLayers[i], offset - w, 0, w, h);
 		}
 	}
-	drawHud(player) {
+	drawHud(player, roomManager) {
 		this.context.drawImage(this.portrait, 20, 20, 155, 140);
 		this.context.fillStyle = "black";
 		this.context.font = "70px Roboto";
 		this.context.fillText(`Kills: ${player.enemiesKilled}`, 180, 90, 140);
+		this.context.fillText(`Room: ${roomManager.currentIndex}`, 180, 150, 140);
 		this.context.fillStyle = "red";
 		this.context.fillRect(
 			20,
