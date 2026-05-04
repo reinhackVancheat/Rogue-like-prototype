@@ -1,4 +1,2 @@
-node_modules/
-package.json
-biome.json
-package-lock.json
+build/bin
+node_modules
