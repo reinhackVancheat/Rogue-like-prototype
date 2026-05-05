@@ -8,13 +8,21 @@ export class Room {
 		this.enemyManager = new EnemyManager(gameTimeManager);
 		this.enemyManager.spawnCooldown = Infinity;
 
+		this.platforms = this._buildPlatforms(index, canvasWidth, canvasHeight);
 		if (type === "combat") {
 			this.cleared = false;
 			const count = 2 + Math.trunc(Math.random() * 4);
 			const roomStartX = index * canvasWidth;
+
+			const spawnSurfaces = [...this.platforms];
+
 			for (let i = 0; i < count; i++) {
+				const surface =
+					spawnSurfaces[Math.trunc(Math.random() * spawnSurfaces.length)];
 				const x =
-					roomStartX + canvasWidth * 0.2 + Math.random() * canvasWidth * 0.6;
+					surface.x + surface.width * 0.2 + Math.random() * surface.width * 0.6;
+				const y = surface.y - 100;
+
 				this.enemyManager.spawn(
 					this.enemyManager.avaliableEnemies[
 						Math.trunc(
@@ -22,23 +30,47 @@ export class Room {
 						)
 					],
 					x,
-					canvasHeight * 0.4,
+					y,
 				);
+				const enemy = this.enemyManager.list.at(-1);
+				enemy.roomMinX = roomStartX;
+				enemy.roomMaxX = roomStartX + canvasWidth;
 			}
 		} else {
 			this.cleared = true;
 		}
 	}
+	_buildPlatforms(index, canvasWidth, canvasHeight) {
+		const startX = index * canvasWidth;
+		const w = canvasWidth;
+		const h = canvasHeight;
 
+		const _MAX_STEP = 120;
+
+		const p = (xFrac, aboveGround, width) =>
+			new Platform(startX + w * xFrac, h - aboveGround, width, 70);
+
+		const configs = [
+			[p(0.08, 70, 300), p(0.38, 160, 250), p(0.68, 200, 300)],
+			[p(0.08, 120, 300), p(0.38, 120, 250), p(0.68, 160, 300)],
+			[p(0.08, 70, 300), p(0.38, 170, 250), p(0.68, 200, 500)],
+		];
+
+		return configs[Math.trunc(Math.random() * configs.length)];
+	}
 	update(wW, wH, player) {
 		this.visited = true;
-		this.enemyManager.update(wW, wH, player);
+		this.enemyManager.update(wW, wH, player, this.platforms);
 		if (!this.cleared && this.enemyManager.list.length === 0) {
 			this.cleared = true;
 		}
 	}
 
 	draw(renderer) {
+		for (const platform of this.platforms) {
+			platform.draw(renderer);
+		}
+
 		this.enemyManager.draw(renderer);
 	}
 }
@@ -92,5 +124,55 @@ export class RoomManager {
 
 	draw(renderer) {
 		this.currentRoom.draw(renderer);
+	}
+}
+
+export class Platform {
+	constructor(x, y, width, height) {
+		this.x = x;
+		this.y = y;
+		this.width = width;
+		this.height = height;
+
+		this.platformImage = new Image();
+		this.platformImage.src =
+			"imgs/Forest_asset_pack/1_Parallax/5_Floor Platform.png";
+	}
+	resolveCollision(entity, frameHeight, deltaTime) {
+		const bottom = entity.y + frameHeight / 2;
+		const top = entity.y - frameHeight / 2;
+		const prevBottom = bottom - entity.vy * deltaTime;
+		const prevTop = top - entity.vy * deltaTime;
+
+		const xOverlap =
+			entity.x + 30 > this.x && entity.x - 30 < this.x + this.width;
+
+		const crossedTop = prevBottom <= this.y && bottom >= this.y;
+		if (xOverlap && crossedTop && entity.vy >= 0) {
+			entity.y = this.y - frameHeight / 2;
+			entity.vy = 0;
+			return true;
+		}
+
+		const platformBottom = this.y + this.height;
+		const crossedBottom = prevTop >= platformBottom && top <= platformBottom;
+		if (xOverlap && crossedBottom && entity.vy < 0) {
+			entity.y = platformBottom + frameHeight / 2;
+			entity.vy = 0;
+			entity.y += 20;
+			return true;
+		}
+
+		return false;
+	}
+
+	draw(renderer) {
+		renderer.context.drawImage(
+			this.platformImage,
+			this.x,
+			this.y,
+			this.width,
+			this.height,
+		);
 	}
 }

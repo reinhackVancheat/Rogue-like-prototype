@@ -37,7 +37,7 @@
         const gameManager = new GameManager(renderer, gameTimeManager);
         const roomManager = new RoomManager(gameTimeManager, canvas.width, canvas.height);
         const camera = new Camera();
-        const player = new Player(300, 200, canvas.width * 0.2, gameTimeManager, keys, roomManager, 500);
+        const player = new Player(0, canvas.width * 0.2, canvas.width * 0.2, gameTimeManager, keys, roomManager, 500);
         await renderer.loadAssets();
 
         window._debug = { player, roomManager, gameManager, camera };

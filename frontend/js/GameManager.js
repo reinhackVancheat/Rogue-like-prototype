@@ -12,9 +12,11 @@ export class GameManager {
 	update(...objects) {
 		this.updateDeltaTime();
 		const player = objects.find((o) => o instanceof Player);
-		const lifeBefore = player?.hp.actual;
 		const roomManager = objects.find((o) => o instanceof RoomManager);
-		player?.update(this.renderer.width, this.renderer.height);
+		const lifeBefore = player?.hp.actual;
+		const platforms = roomManager?.currentRoom.platforms ?? [];
+
+		player?.update(this.renderer.width, this.renderer.height, platforms);
 		roomManager?.update(this.renderer.width, this.renderer.height, player);
 
 		if (lifeBefore > player?.hp.actual) {

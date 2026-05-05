@@ -208,7 +208,7 @@ export class Player {
 		}
 	}
 
-	update(_wW, wH) {
+	update(_wW, wH, platforms = []) {
 		if (this.isDead()) return;
 		if (this.hurt) {
 			this.vx = 0;
@@ -237,6 +237,18 @@ export class Player {
 			this.onGround = true;
 		} else {
 			this.onGround = false;
+		}
+		const frameHeight = this.stateArray[this.state][this.animFrame].height;
+		for (const platform of platforms) {
+			if (
+				platform.resolveCollision(
+					this,
+					frameHeight,
+					this.gameTimeManager.deltaTimeSeconds,
+				)
+			) {
+				this.onGround = true;
+			}
 		}
 	}
 	draw(renderer) {

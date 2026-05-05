@@ -73,8 +73,7 @@ export class Enemy {
 		}
 	}
 
-	update(wW, wH, player) {
-		if (this.isDead()) return;
+	update(wW, wH, player, platforms = []) {
 		if (this.hurt) {
 			this.hurtCount += this.gameTimeManager.deltaTimeSeconds;
 		}
@@ -84,9 +83,15 @@ export class Enemy {
 		}
 		this.updateAnimationState(player);
 		this.updateAnimationSprite();
-		this.applyPhysics(wW, wH);
-		if (this.hurt) return;
+		this.applyPhysics(wW, wH, platforms);
+		if (this.isDead() || this.hurt) return;
 		if (player) this.tryAttack(player);
+	}
+
+	isDeathAnimationDone() {
+		if (!this.isDead()) return false;
+		const frames = this.images.stateArray[4];
+		return this.animFrame >= frames.length - 1;
 	}
 	updateState(newState, newFPS) {
 		if (this.state !== newState) {
@@ -102,26 +107,86 @@ export class Enemy {
 		this.animTimer += this.gameTimeManager.deltaTimeSeconds;
 		if (this.animTimer >= 1 / this.animFPS) {
 			this.animTimer = 0;
+
+			const isLastFrame = this.animFrame >= frames.length - 1;
+			const isDeath = this.state === 4;
+
+			if (isDeath && isLastFrame) return;
+
 			this.animFrame = (this.animFrame + 1) % frames.length;
 		}
 	}
-
-	applyPhysics(_wW, wH) {
+	applyPhysics(wW, wH, platforms = []) {
 		this.vy += 1400 * this.gameTimeManager.deltaTimeSeconds;
-		this.x +=
-			this.xVelocity *
-			this.gameTimeManager.deltaTimeSeconds *
-			this.direction *
-			!this.hurt;
 		this.y += this.vy * this.gameTimeManager.deltaTimeSeconds;
 
 		const frameHeight =
 			this.images.stateArray[this.state][this.animFrame].height;
 		const offset = this.groundOffsetY ?? 0;
+
+		this.onSurface = false;
+
 		if (this.y + frameHeight / 2 - offset >= wH) {
 			this.y = wH - frameHeight / 2 + offset;
 			this.vy = 0;
+			this.onSurface = true;
 		}
+
+		for (const platform of platforms) {
+			if (
+				platform.resolveCollision(
+					this,
+					frameHeight - offset * 2,
+					this.gameTimeManager.deltaTimeSeconds,
+				)
+			) {
+				this.onSurface = true;
+			}
+		}
+
+		if (this.isDead()) return;
+
+		if (this.onSurface && !this.hurt) {
+			const nextStep =
+				this.x +
+				this.xVelocity * this.gameTimeManager.deltaTimeSeconds * this.direction;
+			if (
+				!this.isGroundAhead(platforms, wH) ||
+				nextStep <= (this.roomMinX ?? 0) ||
+				nextStep >= (this.roomMaxX ?? wW)
+			) {
+				this.direction *= -1;
+			}
+		}
+
+		this.x +=
+			this.xVelocity *
+			this.gameTimeManager.deltaTimeSeconds *
+			this.direction *
+			!this.hurt;
+		this.x = Math.max(
+			this.roomMinX ?? 0,
+			Math.min(this.roomMaxX ?? wW, this.x),
+		);
+	}
+
+	isGroundAhead(platforms, wH) {
+		const frameHeight =
+			this.images.stateArray[this.state][this.animFrame].height;
+		const offset = this.groundOffsetY ?? 0;
+		const feetY = this.y + frameHeight / 2 - offset;
+		const checkX = this.x + this.direction * 40;
+		const checkDepth = 50;
+		if (feetY + checkDepth >= wH) return true;
+
+		for (const platform of platforms) {
+			const xInside =
+				checkX >= platform.x && checkX <= platform.x + platform.width;
+			const yBelow = platform.y >= feetY && platform.y <= feetY + checkDepth;
+			if (xInside && yBelow) return true;
+		}
+
+		return false;
 	}
 
 	updateAnimationState() {}
@@ -161,7 +226,7 @@ export class EnemyManager {
 	spawn(EnemyClass, x, y) {
 		this.list.push(new EnemyClass(x, y, this.gameTimeManager));
 	}
-	update(wW, wH, player) {
+	update(wW, wH, player, platforms = []) {
 		this.spawnCount += this.gameTimeManager.deltaTimeSeconds;
 		if (this.spawnCount >= this.spawnCooldown) {
 			this.spawnCount = 0;
@@ -174,9 +239,9 @@ export class EnemyManager {
 			);
 		}
 		for (const enemy of this.list) {
-			enemy.update(wW, wH, player);
+			enemy.update(wW, wH, player, platforms);
 		}
-		this.list = this.list.filter((e) => !e.isDead());
+		this.list = this.list.filter((e) => !e.isDeathAnimationDone());
 	}
 
 	draw(renderer) {
@@ -208,6 +273,9 @@ class LizardGruntImageManager extends EnemyImageManager {
 			Array.from({ length: 4 }, (_, i) =>
 				load(`${base}/Hurt/hurt-${i + 1}.png`, 100, 100),
 			),
+			Array.from({ length: 10 }, (_, i) =>
+				load(`${base}/Death/frame-${i + 1}.png`, 100, 100),
+			),
 		]);
 	}
 }
@@ -218,7 +286,9 @@ export class LizardGrunt extends Enemy {
 	}
 
 	updateAnimationState(player) {
-		if (this.hurt) {
+		if (this.isDead()) {
+			this.updateState(4, 12);
+		} else if (this.hurt) {
 			this.updateState(3, 12);
 		} else if (this.attacking) {
 			this.updateState(2, 12);
@@ -228,7 +298,12 @@ export class LizardGrunt extends Enemy {
 			this.updateState(0, 6);
 		}
 		if (player) {
-			this.direction = player.x > this.x ? 1 : -1;
+			if (
+				Math.abs(player.y - this.y) <= 10 &&
+				Math.abs(player.x - this.x) <= 20
+			) {
+				this.direction = player.x > this.x ? 1 : -1;
+			}
 		}
 	}
 }
@@ -256,6 +331,9 @@ class LizardCommanderImageManager extends EnemyImageManager {
 			Array.from({ length: 4 }, (_, i) =>
 				load(`${base}/Hurt/frame-${i + 1}.png`, 400, 400),
 			),
+			Array.from({ length: 10 }, (_, i) =>
+				load(`${base}/Death/frame-${i + 1}.png`, 400, 400),
+			),
 		]);
 	}
 }
@@ -271,7 +349,9 @@ export class LizardCommander extends Enemy {
 	}
 
 	updateAnimationState(player) {
-		if (this.hurt) {
+		if (this.isDead()) {
+			this.updateState(4, 12);
+		} else if (this.hurt) {
 			this.updateState(3, 12);
 		} else if (this.attacking) {
 			this.updateState(2, 12);
@@ -281,7 +361,12 @@ export class LizardCommander extends Enemy {
 			this.updateState(0, 6);
 		}
 		if (player) {
-			this.direction = player.x > this.x ? 1 : -1;
+			if (
+				Math.abs(player.y - this.y) <= 10 &&
+				Math.abs(player.x - this.x) <= 20
+			) {
+				this.direction = player.x > this.x ? 1 : -1;
+			}
 		}
 	}
 }
