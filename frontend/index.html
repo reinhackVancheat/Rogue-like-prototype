@@ -57,6 +57,9 @@
             if (movement === 1)  roomManager.advance();
             if (movement === -1) roomManager.retreat();
 
+            if(keys[13]){
+                window.location.reload();
+            }
             requestAnimationFrame(gameLoop);
             
         }
